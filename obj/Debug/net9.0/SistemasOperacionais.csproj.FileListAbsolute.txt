@@ -1,0 +1,15 @@
+D:\SO_Pasta_2k25\SistemasOperacionais\bin\Debug\net9.0\SistemasOperacionais.exe
+D:\SO_Pasta_2k25\SistemasOperacionais\bin\Debug\net9.0\SistemasOperacionais.deps.json
+D:\SO_Pasta_2k25\SistemasOperacionais\bin\Debug\net9.0\SistemasOperacionais.runtimeconfig.json
+D:\SO_Pasta_2k25\SistemasOperacionais\bin\Debug\net9.0\SistemasOperacionais.dll
+D:\SO_Pasta_2k25\SistemasOperacionais\bin\Debug\net9.0\SistemasOperacionais.pdb
+D:\SO_Pasta_2k25\SistemasOperacionais\obj\Debug\net9.0\SistemasOperacionais.GeneratedMSBuildEditorConfig.editorconfig
+D:\SO_Pasta_2k25\SistemasOperacionais\obj\Debug\net9.0\SistemasOperacionais.AssemblyInfoInputs.cache
+D:\SO_Pasta_2k25\SistemasOperacionais\obj\Debug\net9.0\SistemasOperacionais.AssemblyInfo.cs
+D:\SO_Pasta_2k25\SistemasOperacionais\obj\Debug\net9.0\SistemasOperacionais.csproj.CoreCompileInputs.cache
+D:\SO_Pasta_2k25\SistemasOperacionais\obj\Debug\net9.0\SistemasOperacionais.sourcelink.json
+D:\SO_Pasta_2k25\SistemasOperacionais\obj\Debug\net9.0\SistemasOperacionais.dll
+D:\SO_Pasta_2k25\SistemasOperacionais\obj\Debug\net9.0\refint\SistemasOperacionais.dll
+D:\SO_Pasta_2k25\SistemasOperacionais\obj\Debug\net9.0\SistemasOperacionais.pdb
+D:\SO_Pasta_2k25\SistemasOperacionais\obj\Debug\net9.0\SistemasOperacionais.genruntimeconfig.cache
+D:\SO_Pasta_2k25\SistemasOperacionais\obj\Debug\net9.0\ref\SistemasOperacionais.dll

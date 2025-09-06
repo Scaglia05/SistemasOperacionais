@@ -1,47 +1,45 @@
-﻿namespace SistemasOperacionais.Model
+﻿using System.Collections.Generic;
+using System.Linq;
+
+namespace SistemasOperacionais.Model
 {
     public class Escalonador
     {
-        public List<Processo> Pronto { get; set; } = new();
-        public List<Processo> Executando { get; set; } = new();
-        public List<Processo> Bloqueados { get; set; } = new();
+        private List<Processo> filaProntos = new();
 
-        // Adiciona processo novo na fila de prontos
-        public void AddProcesso(Processo p)
+        public void AddProcesso(Processo processo)
         {
-            Pronto.Add(p);
-        }
-
-        // Estratégia Round Robin
-        public Processo ProximoRoundRobin()
-        {
-            if (Pronto.Count == 0)
-                return null;
-            var p = Pronto.First();
-            Pronto.RemoveAt(0);
-            Pronto.Add(p); // volta para o fim da fila
-            return p;
-        }
-
-        // Estratégia Shortest Job First
-        public Processo ProximoSJF()
-        {
-            if (Pronto.Count == 0)
-                return null;
-            var p = Pronto.OrderBy(x => x.TempoRestante).First();
-            Pronto.Remove(p);
-            return p;
+            filaProntos.Add(processo);
         }
 
         public Processo ProximoFifo()
         {
-            if (Pronto.Count == 0)
+            if (!filaProntos.Any())
                 return null;
-            var p = Pronto.First();
-            Pronto.RemoveAt(0);
-            Executando.Add(p);
-            return p;
+            var processo = filaProntos.First();
+            filaProntos.RemoveAt(0);
+            return processo;
         }
 
+        public Processo ProximoRoundRobin()
+        {
+            if (!filaProntos.Any())
+                return null;
+            var processo = filaProntos.First();
+            filaProntos.RemoveAt(0);
+            filaProntos.Add(processo); // volta para o fim da fila
+            return processo;
+        }
+
+        public Processo ProximoSJF()
+        {
+            if (!filaProntos.Any())
+                return null;
+            var processo = filaProntos.OrderBy(p => p.TempoRestante).First();
+            filaProntos.Remove(processo);
+            return processo;
+        }
+
+        public IReadOnlyList<Processo> FilaProntos => filaProntos.AsReadOnly();
     }
 }

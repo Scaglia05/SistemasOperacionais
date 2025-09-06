@@ -1,48 +1,27 @@
-﻿
-using SistemasOperacionais.Enum;
+﻿using SistemasOperacionais.Enum;
 
 namespace SistemasOperacionais.Model
 {
     public class ThreadSo
     {
-        public int ProcessoId { get; private set; }
         public Processo ProcessoAlvo { get; private set; }
 
-        public ThreadSo(Processo p)
+        public ThreadSo(Processo processo)
         {
-            ProcessoAlvo = p;
-            ProcessoId = p.Id;
+            ProcessoAlvo = processo;
         }
 
-        // Marca início da execução
-        public void Start()
-        {
-            ProcessoAlvo.EstadoProcesso = Estado.Executando;
-        }
-
-        // Simula pausa (ex: fim de quantum ou preempção)
-        public void Pausar()
-        {
-            if (ProcessoAlvo.EstadoProcesso == Estado.Executando)
-                ProcessoAlvo.EstadoProcesso = Estado.Pronto;
-        }
-
-        // Finaliza execução
-        public void Finalizar()
-        {
-            ProcessoAlvo.EstadoProcesso = Estado.Finalizado;
-        }
-
-        // Executa um ciclo de CPU
+        // Executa um ciclo do processo
         public void ExecutarCiclo()
         {
-            if (ProcessoAlvo.EstadoProcesso != Estado.Executando)
-                Start();
+            if (ProcessoAlvo.EstadoProcesso == Estado.Pronto)
+                ProcessoAlvo.AlterarEstado(Estado.Executando);
 
-            ProcessoAlvo.Executar();
-
-            if (ProcessoAlvo.TempoRestante <= 0)
-                Finalizar();
+            // Executa 1 ciclo de CPU
+            ProcessoAlvo.ExecutarCiclo();
         }
+
+        // Retorna se o processo terminou
+        public bool Terminou => ProcessoAlvo.EstadoProcesso == Estado.Finalizado;
     }
 }

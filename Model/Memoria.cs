@@ -2,8 +2,8 @@
 {
     public class Memoria
     {
-        public int TotalMemoria { get; set; }
-        public int MemoriaDisponivel { get; set; }
+        public int TotalMemoria { get; private set; }
+        public int MemoriaDisponivel { get; private set; }
 
         public Memoria(int total)
         {
@@ -11,23 +11,21 @@
             MemoriaDisponivel = total;
         }
 
-        // Tenta alocar a memória para um processo
-        public bool Alocar(Processo p)
+        public bool Alocar(Processo processo)
         {
-            if (p.TamanhoMemoria <= MemoriaDisponivel)
+            if (processo.MemoriaNecessaria <= MemoriaDisponivel)
             {
-                MemoriaDisponivel -= p.TamanhoMemoria;
+                MemoriaDisponivel -= processo.MemoriaNecessaria;
                 return true;
             }
             return false;
         }
 
-        public void Liberar(Processo p)
+        public void Liberar(Processo processo)
         {
-            MemoriaDisponivel += p.TamanhoMemoria;
+            MemoriaDisponivel += processo.MemoriaNecessaria;
             if (MemoriaDisponivel > TotalMemoria)
-                MemoriaDisponivel = TotalMemoria;
+                MemoriaDisponivel = TotalMemoria; // segurança
         }
-
     }
 }

@@ -40,6 +40,7 @@ namespace SistemasOperacionais.Model
             return processo;
         }
 
+
         public IReadOnlyList<Processo> FilaProntos => filaProntos.AsReadOnly();
     }
 }

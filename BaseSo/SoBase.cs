@@ -64,8 +64,12 @@ namespace SistemasOperacionais.BaseSo
                 } else
                 {
                     nucleo.ThreadAtual?.ExecutarCiclo();
+
                     if (nucleo.ThreadAtual?.ProcessoAlvo.EstadoProcesso == Estado.Finalizado)
+                    {
+                        MemoriaExec.Liberar(nucleo.ThreadAtual.ProcessoAlvo); // <<< faltava isso
                         nucleo.Liberar();
+                    }
                 }
             }
         }

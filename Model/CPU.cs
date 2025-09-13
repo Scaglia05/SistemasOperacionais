@@ -1,11 +1,11 @@
 ﻿namespace SistemasOperacionais.Model
 {
-    public class Memoria
+    public class CPU
     {
         public int TotalMemoria { get; private set; }
         public int MemoriaDisponivel { get; private set; }
 
-        public Memoria(int total)
+        public CPU(int total)
         {
             TotalMemoria = total;
             MemoriaDisponivel = total;

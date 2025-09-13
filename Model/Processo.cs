@@ -11,7 +11,7 @@ namespace SistemasOperacionais.Model
         public int TempoRestante { get; private set; }
         public int MemoriaNecessaria { get; }
         public int TempoExecutado { get; private set; }
-
+        public bool primeiroCiclo { get; set; } = true;
         public Processo(int id, string nome, int tempoExec, int memoriaNecessaria)
         {
             Id = id;
@@ -26,19 +26,26 @@ namespace SistemasOperacionais.Model
         // Executa 1 ciclo de CPU
         public void ExecutarCiclo()
         {
-            if (EstadoProcesso == Estado.Pronto)
-                EstadoProcesso = Estado.Executando;
-
-            if (EstadoProcesso != Estado.Executando)
-                return;
-
-            TempoRestante--;
-            TempoExecutado++;
-
-            if (TempoRestante <= 0)
+            if (primeiroCiclo)
             {
-                TempoRestante = 0;
-                EstadoProcesso = Estado.Finalizado;
+                if (EstadoProcesso == Estado.Pronto)
+                    EstadoProcesso = Estado.Executando;
+
+                primeiroCiclo = false;
+                return; // não decrementa tempo ainda
+            }
+
+            // Executa de fato
+            if (EstadoProcesso == Estado.Executando)
+            {
+                TempoRestante--;
+                TempoExecutado++;
+
+                if (TempoRestante <= 0)
+                {
+                    TempoRestante = 0;
+                    EstadoProcesso = Estado.Finalizado;
+                }
             }
         }
         public void AlterarEstado(Estado novoEstado)

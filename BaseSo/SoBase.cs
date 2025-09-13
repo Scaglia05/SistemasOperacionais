@@ -8,22 +8,31 @@ namespace SistemasOperacionais.BaseSo
         public int MaxNucleos { get; }
         public List<Nucleo> Nucleos { get; private set; }
         public List<Processo> Processos { get; private set; }
-        public Memoria MemoriaExec { get; private set; }
+        public CPU Cpu { get; private set; }
         public Escalonador EscalonadorProcessos { get; private set; }
         public PoliticaEscalonamento Politica { get; set; }
         public int CicloAtual { get; private set; } = 0;
 
-        public SoBase(int maxNucleos, int memoriaTotal, PoliticaEscalonamento politica = PoliticaEscalonamento.Fifo)
+        public SoBase(int memoriaCpu, int maxNucleos, PoliticaEscalonamento politica = PoliticaEscalonamento.Fifo)
         {
             MaxNucleos = maxNucleos;
             Politica = politica;
 
             Nucleos = new List<Nucleo>();
             Processos = new List<Processo>();
-            MemoriaExec = new Memoria(memoriaTotal);
+            Cpu = new CPU(memoriaCpu);
             EscalonadorProcessos = new Escalonador();
 
             AdicionarNucleos();
+        }
+
+        public void InicializarProcessos()
+        {
+            foreach (var p in Processos)
+            {
+                if (!EscalonadorProcessos.FilaProntos.Contains(p) && p.EstadoProcesso == Estado.Pronto)
+                    EscalonadorProcessos.AddProcesso(p);
+            }
         }
 
         private void AdicionarNucleos()
@@ -36,14 +45,9 @@ namespace SistemasOperacionais.BaseSo
         {
             var processo = new Processo(id, nome, tempoExec, tamanhoMemoria);
 
-            if (MemoriaExec.Alocar(processo))
-            {
-                Processos.Add(processo);
-                EscalonadorProcessos.AddProcesso(processo);
-            } else
-            {
-                Console.WriteLine($"[SO] Memória insuficiente para criar processo {nome}.");
-            }
+            // Apenas adiciona à lista e fila de prontos, sem alocar memória ainda
+            Processos.Add(processo);
+            EscalonadorProcessos.AddProcesso(processo);
         }
 
         // Avança 1 ciclo de execução do SO
@@ -58,16 +62,24 @@ namespace SistemasOperacionais.BaseSo
                     var processo = SelecionarProcesso();
                     if (processo != null)
                     {
-                        processo.AlterarEstado(Estado.Executando);
-                        nucleo.Executar(processo);
+                        if (Cpu.Alocar(processo)) // aloca memória só agora
+                        {
+                            EscalonadorProcessos.RemoverProcesso(processo);
+                            processo.AlterarEstado(Estado.Executando);
+                            nucleo.Executar(processo);
+                        } else
+                        {
+                            EscalonadorProcessos.AddProcesso(processo); 
+                        }
                     }
-                } else
+                } 
+                else
                 {
                     nucleo.ThreadAtual?.ExecutarCiclo();
 
                     if (nucleo.ThreadAtual?.ProcessoAlvo.EstadoProcesso == Estado.Finalizado)
                     {
-                        MemoriaExec.Liberar(nucleo.ThreadAtual.ProcessoAlvo); // <<< faltava isso
+                        Cpu.Liberar(nucleo.ThreadAtual.ProcessoAlvo); // <<< faltava isso
                         nucleo.Liberar();
                     }
                 }
@@ -93,7 +105,7 @@ namespace SistemasOperacionais.BaseSo
 
         public void MostrarStatus()
         {
-            Console.WriteLine($"\nMemória disponível: {MemoriaExec.MemoriaDisponivel}/{MemoriaExec.TotalMemoria}");
+            Console.WriteLine($"\nMemória disponível: {Cpu.MemoriaDisponivel}/{Cpu.TotalMemoria}");
 
             Console.WriteLine("\nFila de prontos:");
             var fila = EscalonadorProcessos.FilaProntos;

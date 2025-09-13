@@ -11,7 +11,11 @@ namespace SistemasOperacionais.Model
         {
             filaProntos.Add(processo);
         }
-
+        public void RemoverProcesso(Processo p)
+        {
+            if (FilaProntos.Contains(p))
+                filaProntos.Remove(p);
+        }
         public Processo ProximoFifo()
         {
             if (!filaProntos.Any())

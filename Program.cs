@@ -12,37 +12,52 @@ class Program
         do
         {
             Console.Clear();
-            Console.ForegroundColor = ConsoleColor.Cyan;
-            Console.WriteLine("======================================");
-            Console.WriteLine("        SIMULADOR DE SO");
-            Console.WriteLine("======================================");
-            Console.ResetColor();
+            WriteCenteredBlock(new[]
+            {
+                "==============================================",
+                "             SIMULADOR DE SO                  ",
+                "=============================================="
+            }, ConsoleColor.Cyan);
 
-            // 1. Criar processos de exemplo (antes de escolher política)
             var processosExemplo = new List<(int id, string nome, int tempo, int memoria)>
-{
-    (1, "ProcA", 5, 10),
-    (2, "ProcB", 3, 30),
-    (3, "ProcC", 7, 15)
-};
+            {
+                (1, "ProcA", 5, 10),
+                (2, "ProcB", 3, 30),
+                (3, "ProcC", 7, 15)
+            };
 
-            // 2. Mostrar processos para o usuário
-            Console.ForegroundColor = ConsoleColor.Yellow;
-            Console.WriteLine("Processos disponíveis:\n");
+
+            // Título do bloco
+            WriteCenteredBlock(new[]
+            {
+                "",
+                "Processos disponíveis:"
+            }, ConsoleColor.Yellow);
+
+            // Lista de processos em outra cor
             foreach (var p in processosExemplo)
-                Console.WriteLine($"[{p.id}] {p.nome} | Tempo total: {p.tempo} | Memória: {p.memoria}");
-            Console.ResetColor();
+            {
+                WriteCenteredLine($"[{p.id}] {p.nome,-6} | Tempo: {p.tempo,-3} | Memória: {p.memoria,-3}", ConsoleColor.DarkCyan);
+            }
 
-            // 3. Perguntar política de escalonamento
-            Console.WriteLine("\nEscolha a política de escalonamento:");
-            Console.ForegroundColor = ConsoleColor.Yellow;
-            Console.WriteLine("1 - FIFO");
-            Console.WriteLine("2 - Round Robin");
-            Console.WriteLine("3 - SJF");
-            Console.ResetColor();
-            Console.WriteLine("q - Sair");
-            Console.Write("Opção: ");
-            inputMenu = Console.ReadLine();
+
+            WriteCenteredLine(""); // espaçamento
+
+            WriteCenteredBlock(new[]
+            {
+                "Escolha a política de escalonamento:"
+            }, ConsoleColor.White);
+
+            WriteCenteredBlock(new[]
+            {
+                "1 - FIFO",
+                "2 - Round Robin",
+                "3 - SJF",
+                "q - Sair"
+            }, ConsoleColor.Yellow);
+
+            WriteCenteredLine(""); // espaçamento
+            inputMenu = ReadCentered("Opção: ");
 
             if (inputMenu == "q")
                 break;
@@ -55,90 +70,101 @@ class Program
                 _ => PoliticaEscalonamento.Fifo
             };
 
-            // 4. Criar SO depois da escolha da política
             var so = new SoBase(memoriaCpu: 100, maxNucleos: 2, politica: politica);
-
-            // 5. Criar processos dentro do SO
             foreach (var p in processosExemplo)
                 so.CriarProcesso(p.id, p.nome, p.tempo, p.memoria);
 
             so.InicializarProcessos();
-            Console.ResetColor();
 
-            Console.ForegroundColor = ConsoleColor.Green;
-            Console.WriteLine($"\nExecutando com política: {politica}");
-            Console.ResetColor();
-            Console.WriteLine("Pressione Enter para avançar um ciclo, 'r' para reiniciar, ou 'q' para sair.");
+            WriteCenteredLine(""); // espaçamento
+            WriteCenteredLine($"Executando com política: {politica}", ConsoleColor.Green);
+            WriteCenteredLine("Pressione Enter para avançar um ciclo, 'r' para reiniciar, ou 'q' para sair.");
+            WriteCenteredLine(""); // espaçamento
 
             string input;
             do
             {
-                Console.ForegroundColor = ConsoleColor.Magenta;
-                Console.WriteLine($"\n=== CICLO {so.CicloAtual + 1} ===");
-                Console.ResetColor();
-
+                WriteCenteredLine($"================== CICLO {so.CicloAtual + 1} ==================", ConsoleColor.Magenta);
                 so.ExecutarCiclo();
                 MostrarStatus(so);
+                WriteCenteredLine(""); // espaçamento
 
-                Console.WriteLine("\n[Enter] próximo ciclo   |   [r] reiniciar   |   [q] sair");
-                input = Console.ReadLine();
-
+                input = ReadCentered("[Enter] próximo ciclo   |   [r] reiniciar   |   [q] sair: ");
                 if (input == "r")
-                    break; // reinicia (volta para o menu principal)
+                    break;
 
             } while (input != "q" && so.ProcessosPendentes());
 
             if (input != "r" && input != "q")
             {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine("\n>>> Simulação finalizada. <<<");
-                Console.ResetColor();
+                WriteCenteredLine(">>> Simulação finalizada. <<<", ConsoleColor.Red);
                 MostrarStatus(so);
+                WriteCenteredLine(""); // espaçamento
             }
 
         } while (inputMenu != "q");
 
-        Console.ForegroundColor = ConsoleColor.DarkCyan;
-        Console.WriteLine("\nEncerrando simulador... Até a próxima!");
-        Console.ResetColor();
+        WriteCenteredLine("Encerrando simulador... Até a próxima!", ConsoleColor.DarkCyan);
     }
 
     static void MostrarStatus(SoBase so)
     {
-        Console.ForegroundColor = ConsoleColor.Cyan;
-        Console.WriteLine($"\nMemória disponível: {so.Cpu.MemoriaDisponivel}/{so.Cpu.TotalMemoria}");
-        Console.ResetColor();
+        WriteCenteredLine($"Memória disponível: {so.Cpu.MemoriaDisponivel}/{so.Cpu.TotalMemoria}", ConsoleColor.Cyan);
+        WriteCenteredLine(""); // espaçamento
 
-        Console.ForegroundColor = ConsoleColor.Yellow;
-        Console.WriteLine("\nFila de prontos:");
-        Console.ResetColor();
+        WriteCenteredLine("--------- Fila de prontos ---------", ConsoleColor.Yellow);
         var fila = so.EscalonadorProcessos.FilaProntos;
         if (!fila.Any())
-            Console.WriteLine("- Vazia");
+            WriteCenteredLine("- Vazia");
         else
             foreach (var p in fila)
-                Console.WriteLine($"- {p.Nome} | Tempo restante: {p.TempoRestante} | Executado: {p.TempoExecutado}");
+                WriteCenteredLine($"| {p.Nome,-6} | Restante: {p.TempoRestante,-3} | Executado: {p.TempoExecutado,-3} |");
 
-        Console.ForegroundColor = ConsoleColor.Green;
-        Console.WriteLine("\nNúcleos:");
-        Console.ResetColor();
+        WriteCenteredLine(""); // espaçamento
+        WriteCenteredLine("------------- Núcleos --------------", ConsoleColor.Green);
         foreach (var n in so.Nucleos)
         {
-            if (n.Disponivel)
-                Console.WriteLine($"Núcleo {n.Id}: Livre");
-            else
-                Console.WriteLine($"Núcleo {n.Id}: Executando {n.ThreadAtual.ProcessoAlvo.Nome} " +
-                                  $"(Restante: {n.ThreadAtual.ProcessoAlvo.TempoRestante}, Executado: {n.ThreadAtual.ProcessoAlvo.TempoExecutado})");
+            string line = n.Disponivel
+                ? $"| Núcleo {n.Id,-2} | Livre"
+                : $"| Núcleo {n.Id,-2} | {n.ThreadAtual.ProcessoAlvo.Nome,-6} | Restante: {n.ThreadAtual.ProcessoAlvo.TempoRestante,-3} | Executado: {n.ThreadAtual.ProcessoAlvo.TempoExecutado,-3} |";
+            WriteCenteredLine(line);
         }
 
-        Console.ForegroundColor = ConsoleColor.Red;
-        Console.WriteLine("\nProcessos finalizados:");
-        Console.ResetColor();
+        WriteCenteredLine(""); // espaçamento
+        WriteCenteredLine("--------- Processos finalizados ---------", ConsoleColor.Red);
         var finalizados = so.Processos.FindAll(p => p.EstadoProcesso == Estado.Finalizado);
         if (!finalizados.Any())
-            Console.WriteLine("- Nenhum");
+            WriteCenteredLine("- Nenhum");
         else
             foreach (var p in finalizados)
-                Console.WriteLine($"- {p.Nome} | Tempo total executado: {p.TempoExecutado}");
+                WriteCenteredLine($"| {p.Nome,-6} | Tempo total executado: {p.TempoExecutado,-3} |");
+    }
+
+    static void WriteCenteredLine(string text, ConsoleColor? color = null)
+    {
+        if (color.HasValue)
+            Console.ForegroundColor = color.Value;
+        int width = Console.WindowWidth;
+        int pad = (width - text.Length) / 2;
+        if (pad < 0)
+            pad = 0;
+        Console.WriteLine(new string(' ', pad) + text);
+        Console.ResetColor();
+    }
+
+    static void WriteCenteredBlock(string[] lines, ConsoleColor? color = null)
+    {
+        foreach (var line in lines)
+            WriteCenteredLine(line, color);
+    }
+
+    static string ReadCentered(string prompt)
+    {
+        int width = Console.WindowWidth;
+        int pad = (width - prompt.Length) / 2;
+        if (pad < 0)
+            pad = 0;
+        Console.Write(new string(' ', pad));
+        return Console.ReadLine();
     }
 }

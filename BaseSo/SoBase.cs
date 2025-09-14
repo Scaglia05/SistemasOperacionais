@@ -1,5 +1,6 @@
 ﻿using SistemasOperacionais.Enum;
 using SistemasOperacionais.Model;
+using System.Diagnostics;
 
 namespace SistemasOperacionais.BaseSo
 {
@@ -12,6 +13,8 @@ namespace SistemasOperacionais.BaseSo
         public Escalonador EscalonadorProcessos { get; private set; }
         public PoliticaEscalonamento Politica { get; set; }
         public int CicloAtual { get; private set; } = 0;
+        public int Quantum { get; set; } = 2;
+
 
         public SoBase(int memoriaCpu, int maxNucleos, PoliticaEscalonamento politica = PoliticaEscalonamento.Fifo)
         {
@@ -62,6 +65,7 @@ namespace SistemasOperacionais.BaseSo
                     var processo = SelecionarProcesso();
                     if (processo != null)
                     {
+                        processo.primeiroCiclo = true;
                         if (Cpu.Alocar(processo)) // aloca memória só agora
                         {
                             EscalonadorProcessos.RemoverProcesso(processo);
@@ -69,13 +73,20 @@ namespace SistemasOperacionais.BaseSo
                             nucleo.Executar(processo);
                         } else
                         {
-                            EscalonadorProcessos.AddProcesso(processo); 
+                            EscalonadorProcessos.AddProcesso(processo);
                         }
                     }
-                } 
-                else
+                } else
                 {
                     nucleo.ThreadAtual?.ExecutarCiclo();
+
+                    if (Politica.Equals(PoliticaEscalonamento.RoundRobin) && nucleo.ThreadAtual.ProcessoAlvo.TempoExecutado == Quantum)
+                    {
+                        nucleo.ThreadAtual.ProcessoAlvo.TempoExecutado = 0; 
+                        EscalonadorProcessos.AddProcesso(nucleo.ThreadAtual.ProcessoAlvo);
+                        Cpu.Liberar(nucleo.ThreadAtual.ProcessoAlvo); // <<< faltava isso
+                        nucleo.Liberar();
+                    }
 
                     if (nucleo.ThreadAtual?.ProcessoAlvo.EstadoProcesso == Estado.Finalizado)
                     {
@@ -101,37 +112,6 @@ namespace SistemasOperacionais.BaseSo
         public bool ProcessosPendentes()
         {
             return Processos.Exists(p => p.EstadoProcesso != Estado.Finalizado);
-        }
-
-        public void MostrarStatus()
-        {
-            Console.WriteLine($"\nMemória disponível: {Cpu.MemoriaDisponivel}/{Cpu.TotalMemoria}");
-
-            Console.WriteLine("\nFila de prontos:");
-            var fila = EscalonadorProcessos.FilaProntos;
-            if (fila.Count == 0)
-                Console.WriteLine("- Vazia");
-            else
-                foreach (var p in fila)
-                    Console.WriteLine($"- {p.Nome} | Tempo restante: {p.TempoRestante} | Executado: {p.TempoExecutado}");
-
-            Console.WriteLine("\nNúcleos:");
-            foreach (var n in Nucleos)
-            {
-                if (n.Disponivel)
-                    Console.WriteLine($"Núcleo {n.Id}: Livre");
-                else
-                    Console.WriteLine($"Núcleo {n.Id}: Executando {n.ThreadAtual.ProcessoAlvo.Nome} " +
-                                      $"(Restante: {n.ThreadAtual.ProcessoAlvo.TempoRestante}, Executado: {n.ThreadAtual.ProcessoAlvo.TempoExecutado})");
-            }
-
-            Console.WriteLine("\nProcessos finalizados:");
-            var finalizados = Processos.FindAll(p => p.EstadoProcesso == Estado.Finalizado);
-            if (finalizados.Count == 0)
-                Console.WriteLine("- Nenhum");
-            else
-                foreach (var p in finalizados)
-                    Console.WriteLine($"- {p.Nome} | Tempo total executado: {p.TempoExecutado}");
         }
 
     }

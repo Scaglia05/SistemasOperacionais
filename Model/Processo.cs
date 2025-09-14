@@ -10,7 +10,7 @@ namespace SistemasOperacionais.Model
         public int TempoTotal { get; }
         public int TempoRestante { get; private set; }
         public int MemoriaNecessaria { get; }
-        public int TempoExecutado { get; private set; }
+        public int TempoExecutado { get; set; }
         public bool primeiroCiclo { get; set; } = true;
         public Processo(int id, string nome, int tempoExec, int memoriaNecessaria)
         {

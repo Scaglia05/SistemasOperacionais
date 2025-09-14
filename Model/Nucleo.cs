@@ -27,15 +27,5 @@ namespace SistemasOperacionais.Model
         {
             ThreadAtual = null;
         }
-
-        // Continua execução do processo atual (caso já esteja rodando)
-        public void ContinuarCiclo()
-        {
-            if (ThreadAtual != null && !ThreadAtual.Terminou)
-                ThreadAtual.ExecutarCiclo();
-
-            if (ThreadAtual != null && ThreadAtual.Terminou)
-                Liberar();
-        }
     }
 }

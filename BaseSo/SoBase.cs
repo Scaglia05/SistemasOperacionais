@@ -65,10 +65,10 @@ namespace SistemasOperacionais.BaseSo
                     var processo = SelecionarProcesso();
                     if (processo != null)
                     {
-                        processo.primeiroCiclo = true;
                         if (Cpu.Alocar(processo)) // aloca memória só agora
                         {
                             EscalonadorProcessos.RemoverProcesso(processo);
+                            processo.primeiroCiclo = true;
                             processo.AlterarEstado(Estado.Executando);
                             nucleo.Executar(processo);
                         } else
@@ -79,10 +79,9 @@ namespace SistemasOperacionais.BaseSo
                 } else
                 {
                     nucleo.ThreadAtual?.ExecutarCiclo();
-
                     if (Politica.Equals(PoliticaEscalonamento.RoundRobin) && nucleo.ThreadAtual.ProcessoAlvo.TempoExecutado == Quantum)
                     {
-                        nucleo.ThreadAtual.ProcessoAlvo.TempoExecutado = 0; 
+                        nucleo.ThreadAtual.ProcessoAlvo.TempoExecutado = 0;
                         EscalonadorProcessos.AddProcesso(nucleo.ThreadAtual.ProcessoAlvo);
                         Cpu.Liberar(nucleo.ThreadAtual.ProcessoAlvo); // <<< faltava isso
                         nucleo.Liberar();
@@ -94,6 +93,9 @@ namespace SistemasOperacionais.BaseSo
                         nucleo.Liberar();
                     }
                 }
+
+                //EscalonadorProcessos.RemoverProcesso(nucleo?.ThreadAtual?.ProcessoAlvo);
+                EscalonadorProcessos.Duplicado();
             }
         }
 

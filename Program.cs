@@ -21,9 +21,9 @@ class Program
 
             var processosExemplo = new List<(int id, string nome, int tempo, int memoria)>
             {
-                (1, "ProcA", 5, 10),
-                (2, "ProcB", 3, 30),
-                (3, "ProcC", 7, 15)
+                (1, "ProcA", 6, 10),
+                (2, "ProcB", 4, 30),
+                (3, "ProcC", 3, 75)
             };
 
 

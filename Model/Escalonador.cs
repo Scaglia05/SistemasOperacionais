@@ -44,6 +44,11 @@ namespace SistemasOperacionais.Model
             return processo;
         }
 
+        public void Duplicado()
+        {
+            filaProntos = filaProntos.Distinct().ToList();
+        }
+
 
         public IReadOnlyList<Processo> FilaProntos => filaProntos.AsReadOnly();
     }

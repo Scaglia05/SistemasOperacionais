@@ -9,11 +9,13 @@ Pedro Henrique Oliveira de Souza - Ra: 113364 => pedro1204@alunos.fho.edu.br
 
 ---
 
-## 📌 Sobre o Projeto
-O **Simulador de Sistema Operacional** é uma aplicação desenvolvida em **C#** com o objetivo de **ilustrar e comparar políticas de escalonamento de processos**.  
-Ele recria o comportamento de um ambiente multiprocessado, considerando **tempo de CPU, consumo de memória e estados de processos**.  
+## 📌 Sobre o Projeto  
+O **Simulador de Sistema Operacional** é uma aplicação desenvolvida em **C#** com a finalidade de **demonstrar, comparar e analisar políticas de escalonamento de processos** em um ambiente controlado.  
+Ele recria o funcionamento de um **sistema multiprocessado**, considerando fatores como **tempo de CPU, alocação de memória, estados dos processos (pronto, executando e finalizado) e ordem de finalização**.  
 
-A proposta é oferecer uma ferramenta acadêmica e didática que auxilie na compreensão prática de conceitos fundamentais de **Sistemas Operacionais**.
+Mais do que apenas simular, o projeto busca **aproximar teoria e prática**, permitindo que estudantes e pesquisadores observem de forma clara como cada algoritmo de escalonamento influencia o desempenho, a utilização de recursos e a organização dos processos.  
+O simulador oferece uma visão prática de conceitos fundamentais de **Sistemas Operacionais** e **Arquitetura de Computadores**, servindo como **ferramenta didática e acadêmica** para estudos, experimentos e discussões em sala de aula.  
+Em suma, ele transforma abstrações teóricas em uma experiência visual e interativa, facilitando a compreensão do comportamento de diferentes políticas de escalonamento em cenários realistas.
 
 ---
 
@@ -30,7 +32,8 @@ A proposta é oferecer uma ferramenta acadêmica e didática que auxilie na comp
 ---
 
 ## 📂 Estrutura do Projeto
-- **BaseSo/** → Classes principais (CPU, Núcleo, Processo, Thread).  
+- **Model/** → Classes Auxiliares (CPU, Núcleo, Processo, Thread).
+- **BaseSO/** → Classe principal (SoBase).    
 - **Enum/** → Definições de estados e políticas de escalonamento.  
 - **Program.cs** → Ponto de entrada e interação com o usuário.  
 
@@ -39,12 +42,6 @@ A proposta é oferecer uma ferramenta acadêmica e didática que auxilie na comp
 ## 🛠️ Tecnologias Utilizadas
 - **C# .NET**  
 - **Console Application**  
-
----
-
-## 🎯 Objetivo
-Este simulador foi criado com a finalidade de **aproximar a teoria da prática**, mostrando de forma clara como cada política de escalonamento impacta a execução de processos.  
-É uma ferramenta de apoio para estudantes e pesquisadores interessados em **arquitetura de computadores** e **sistemas operacionais**.
 
 ---
 

@@ -62,6 +62,7 @@ class Program
             if (inputMenu == "q")
                 break;
 
+            // ...
             PoliticaEscalonamento politica = inputMenu switch
             {
                 "1" => PoliticaEscalonamento.Fifo,
@@ -69,6 +70,11 @@ class Program
                 "3" => PoliticaEscalonamento.SJF,
                 _ => PoliticaEscalonamento.Fifo
             };
+
+            WriteCenteredLine(""); // espaçamento
+            WriteCenteredLine("Deseja rodar automaticamente (a cada 5s)? (s/n): ");
+            string modo = ReadCentered("Deseja rodar automaticamente (a cada 20s)? (s/n): ");
+            bool modoAutomatico = modo?.Trim().ToLower() == "s";
 
             var so = new SoBase(memoriaCpu: 100, maxNucleos: 2, politica: politica);
             foreach (var p in processosExemplo)
@@ -78,7 +84,12 @@ class Program
 
             WriteCenteredLine(""); // espaçamento
             WriteCenteredLine($"Executando com política: {politica}", ConsoleColor.Green);
-            WriteCenteredLine("Pressione Enter para avançar um ciclo, 'r' para reiniciar, ou 'q' para sair.");
+
+            if (modoAutomatico)
+                WriteCenteredLine("Simulação automática: um ciclo a cada 20 segundos.", ConsoleColor.Yellow);
+            else
+                WriteCenteredLine("Simulação manual: pressione Enter para avançar um ciclo.", ConsoleColor.Yellow);
+
             WriteCenteredLine(""); // espaçamento
 
             string input;
@@ -89,12 +100,18 @@ class Program
                 MostrarStatus(so);
                 WriteCenteredLine(""); // espaçamento
 
-                // Espera automática de 20 segundos em vez de apertar Enter
-                Thread.Sleep(5000);
+                if (modoAutomatico)
+                {
+                    Thread.Sleep(5000); // 20 segundos
+                    input = ""; // continua
+                } else
+                {
+                    input = ReadCentered("[Enter] próximo ciclo   |   [r] reiniciar   |   [q] sair: ");
+                    if (input == "r")
+                        break;
+                }
 
-                input = ""; // força continuar rodando até acabar ou reiniciar
-
-            } while (so.ProcessosPendentes());
+            } while (input != "q" && so.ProcessosPendentes());
 
 
             if (input != "r" && input != "q")

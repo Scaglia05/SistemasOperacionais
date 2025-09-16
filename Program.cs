@@ -89,11 +89,13 @@ class Program
                 MostrarStatus(so);
                 WriteCenteredLine(""); // espaçamento
 
-                input = ReadCentered("[Enter] próximo ciclo   |   [r] reiniciar   |   [q] sair: ");
-                if (input == "r")
-                    break;
+                // Espera automática de 20 segundos em vez de apertar Enter
+                Thread.Sleep(5000);
 
-            } while (input != "q" && so.ProcessosPendentes());
+                input = ""; // força continuar rodando até acabar ou reiniciar
+
+            } while (so.ProcessosPendentes());
+
 
             if (input != "r" && input != "q")
             {

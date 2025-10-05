@@ -1,27 +1,34 @@
 ﻿using SistemasOperacionais.Enum;
+using System.Collections.Generic;
 
 namespace SistemasOperacionais.Model
 {
     public class ThreadSo
     {
-        public Processo ProcessoAlvo { get; private set; }
+        private static int NextId = 1;
+        public int Id { get; }
+        public Processo ProcessoPai { get; private set; }
+        public Stack<int> Pilha { get; private set; } = new();
+
+        public Estado EstadoThread => ProcessoPai.EstadoProcesso;
+        public bool Terminou => ProcessoPai.EstadoProcesso == Estado.Finalizado;
 
         public ThreadSo(Processo processo)
         {
-            ProcessoAlvo = processo;
+            Id = NextId++;
+            ProcessoPai = processo;
         }
 
-        // Executa um ciclo do processo
-        public void ExecutarCiclo()
+        public void ExecutarCiclo(int quantum)
         {
-            if (ProcessoAlvo.EstadoProcesso == Estado.Pronto)
-                ProcessoAlvo.AlterarEstado(Estado.Executando);
-
-            // Executa 1 ciclo de CPU
-            ProcessoAlvo.ExecutarCiclo();
+            if (ProcessoPai.EstadoProcesso == Estado.Bloqueado)
+                return;
+            if (ProcessoPai.TempoRespostaPrimeiraCPU == -1)
+                ProcessoPai.RegistrarPrimeiraResposta(quantum);
+            ProcessoPai.ExecutarCiclo(quantum);
         }
 
-        // Retorna se o processo terminou
-        public bool Terminou => ProcessoAlvo.EstadoProcesso == Estado.Finalizado;
+        public void Preemptar() { } // Apenas simulação
+        public void ResetPilha() => Pilha.Clear();
     }
 }

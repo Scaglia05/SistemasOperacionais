@@ -5,51 +5,44 @@ namespace SistemasOperacionais.Model
 {
     public class Escalonador
     {
-        private List<Processo> filaProntos = new();
+        private List<Processo> fila = new();
 
-        public void AddProcesso(Processo processo)
+        public void Adicionar(Processo p)
         {
-            filaProntos.Add(processo);
+            if (!fila.Contains(p))
+                fila.Add(p);
         }
-        public void RemoverProcesso(Processo p)
+
+        public void Remover(Processo p) => fila.Remove(p);
+
+        public Processo ProximoFIFO()
         {
-            if (FilaProntos.Contains(p))
-                filaProntos.Remove(p);
-        }
-        public Processo ProximoFifo()
-        {
-            if (!filaProntos.Any())
+            if (!fila.Any())
                 return null;
-            var processo = filaProntos.First();
-            filaProntos.RemoveAt(0);
-            return processo;
+            var p = fila.First();
+            fila.RemoveAt(0);
+            return p;
         }
 
-        public Processo ProximoRoundRobin()
+        public Processo ProximoRoundRobin(int quantum)
         {
-            if (!filaProntos.Any())
+            if (!fila.Any())
                 return null;
-            var processo = filaProntos.First();
-            filaProntos.RemoveAt(0);
-            filaProntos.Add(processo); // volta para o fim da fila
-            return processo;
+            var p = fila.First();
+            fila.RemoveAt(0);
+            fila.Add(p);
+            return p;
         }
 
-        public Processo ProximoSJF()
+        public Processo ProximoPrioridade(bool preemptivo = false)
         {
-            if (!filaProntos.Any())
+            if (!fila.Any())
                 return null;
-            var processo = filaProntos.OrderBy(p => p.TempoRestante).First();
-            filaProntos.Remove(processo);
-            return processo;
+            var p = fila.OrderByDescending(x => x.Prioridade).First();
+            fila.Remove(p);
+            return p;
         }
 
-        public void Duplicado()
-        {
-            filaProntos = filaProntos.Distinct().ToList();
-        }
-
-
-        public IReadOnlyList<Processo> FilaProntos => filaProntos.AsReadOnly();
+        public IReadOnlyList<Processo> Fila => fila.AsReadOnly();
     }
 }

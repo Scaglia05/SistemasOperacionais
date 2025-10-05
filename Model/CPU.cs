@@ -1,31 +1,30 @@
-﻿namespace SistemasOperacionais.Model
+﻿using SistemasOperacionais.Model;
+
+public class CPU
 {
-    public class CPU
+    public int TotalMemoria { get; }
+    public int MemoriaDisponivel { get; private set; }
+
+    public CPU(int total)
     {
-        public int TotalMemoria { get; private set; }
-        public int MemoriaDisponivel { get; private set; }
+        TotalMemoria = total;
+        MemoriaDisponivel = total;
+    }
 
-        public CPU(int total)
+    public bool Alocar(Processo p)
+    {
+        if (p.MemoriaNecessaria <= MemoriaDisponivel)
         {
-            TotalMemoria = total;
-            MemoriaDisponivel = total;
+            MemoriaDisponivel -= p.MemoriaNecessaria;
+            return true;
         }
+        return false;
+    }
 
-        public bool Alocar(Processo processo)
-        {
-            if (processo.MemoriaNecessaria <= MemoriaDisponivel)
-            {
-                MemoriaDisponivel -= processo.MemoriaNecessaria;
-                return true;
-            }
-            return false;
-        }
-
-        public void Liberar(Processo processo)
-        {
-            MemoriaDisponivel += processo.MemoriaNecessaria;
-            if (MemoriaDisponivel > TotalMemoria)
-                MemoriaDisponivel = TotalMemoria; // segurança
-        }
+    public void Liberar(Processo p)
+    {
+        MemoriaDisponivel += p.MemoriaNecessaria;
+        if (MemoriaDisponivel > TotalMemoria)
+            MemoriaDisponivel = TotalMemoria;
     }
 }

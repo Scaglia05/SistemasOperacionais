@@ -1,31 +1,37 @@
-﻿using SistemasOperacionais.Model;
-using SistemasOperacionais.Enum;
+﻿using SistemasOperacionais.Enum;
+using SistemasOperacionais.Model;
 
-namespace SistemasOperacionais.Model
+public class Nucleo
 {
-    public class Nucleo
+    public int Id { get; }
+    public ThreadSo ThreadAtual { get; private set; }
+    public bool Disponivel => ThreadAtual == null || ThreadAtual.Terminou;
+
+    public Nucleo(int id) => Id = id;
+
+    public void Atribuir(Processo p)
     {
-        public int Id { get; set; }
-        public bool Disponivel => ThreadAtual == null || ThreadAtual.Terminou;
-        public ThreadSo ThreadAtual { get; private set; }
+        if (!Disponivel)
+            return;
+        ThreadAtual = new ThreadSo(p);
+        p.AlterarEstado(Estado.Executando);
+    }
 
-        // Atribui um processo ao núcleo
-        public void Executar(Processo p)
-        {
-            if (!Disponivel)
-                return;
-
-            ThreadAtual = new ThreadSo(p);
-            ThreadAtual.ExecutarCiclo();
-
-            if (ThreadAtual.Terminou)
-                Liberar();
-        }
-
-        // Libera o núcleo quando o processo termina
-        public void Liberar()
-        {
+    public void ExecutarCiclo(int quantum)
+    {
+        if (ThreadAtual == null)
+            return;
+        ThreadAtual.ExecutarCiclo(quantum);
+        if (ThreadAtual.Terminou)
             ThreadAtual = null;
-        }
+    }
+
+    public Processo Preemptar()
+    {
+        if (ThreadAtual == null)
+            return null;
+        var p = ThreadAtual.ProcessoPai;
+        ThreadAtual = null;
+        return p;
     }
 }

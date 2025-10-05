@@ -21,6 +21,7 @@ public enum Estado : sbyte
     [Description("Finalizado")]
     Finalizado
 }
+
 public enum PoliticaEscalonamento : sbyte
 {
     [Description("FIFO")]
@@ -28,7 +29,9 @@ public enum PoliticaEscalonamento : sbyte
     [Description("Round Robin")]
     RoundRobin,
     [Description("SJF")]
-    SJF
+    SJF,
+    [Description("Prioridade ")]
+    Prioridade
 }
 
 

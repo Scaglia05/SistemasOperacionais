@@ -1,13 +1,16 @@
 ﻿using System;
-using SistemasOperacionais.BaseSo;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
 using SistemasOperacionais.Enum;
+using SistemasOperacionais.Model;
 
 class Program
 {
     static void Main()
     {
-        string inputMenu;
         Console.Title = "Simulador de Sistema Operacional";
+        string inputMenu;
 
         do
         {
@@ -19,6 +22,7 @@ class Program
                 "=============================================="
             }, ConsoleColor.Cyan);
 
+            // Exemplo de processos
             var processosExemplo = new List<(int id, string nome, int tempo, int memoria)>
             {
                 (1, "ProcA", 6, 10),
@@ -26,99 +30,87 @@ class Program
                 (3, "ProcC", 3, 75)
             };
 
-
-            // Título do bloco
-            WriteCenteredBlock(new[]
-            {
-                "",
-                "Processos disponíveis:"
-            }, ConsoleColor.Yellow);
-
-            // Lista de processos em outra cor
+            WriteCenteredBlock(new[] { "", "Processos disponíveis:" }, ConsoleColor.Yellow);
             foreach (var p in processosExemplo)
-            {
                 WriteCenteredLine($"[{p.id}] {p.nome,-6} | Tempo: {p.tempo,-3} | Memória: {p.memoria,-3}", ConsoleColor.DarkCyan);
-            }
-
-
-            WriteCenteredLine(""); // espaçamento
+            WriteCenteredLine("");
 
             WriteCenteredBlock(new[]
             {
-                "Escolha a política de escalonamento:"
-            }, ConsoleColor.White);
-
-            WriteCenteredBlock(new[]
-            {
+                "Escolha a política de escalonamento:",
                 "1 - FIFO",
                 "2 - Round Robin",
-                "3 - SJF",
+                "3 - Prioridade",
                 "q - Sair"
             }, ConsoleColor.Yellow);
 
-            WriteCenteredLine(""); // espaçamento
             inputMenu = ReadCentered("Opção: ");
-
             if (inputMenu == "q")
                 break;
 
-            // ...
-            PoliticaEscalonamento politica = inputMenu switch
+            string politicaEscolhida = inputMenu switch
             {
-                "1" => PoliticaEscalonamento.Fifo,
-                "2" => PoliticaEscalonamento.RoundRobin,
-                "3" => PoliticaEscalonamento.SJF,
-                _ => PoliticaEscalonamento.Fifo
+                "1" => "fifo",
+                "2" => "rr",
+                "3" => "prioridade",
+                _ => "fifo"
             };
 
-            WriteCenteredLine(""); // espaçamento
-            WriteCenteredLine("Deseja rodar automaticamente (a cada 5s)? (s/n): ");
-            string modo = ReadCentered("Deseja rodar automaticamente (a cada 20s)? (s/n): ");
+            string modo = ReadCentered("Deseja rodar automaticamente (a cada 5s)? (s/n): ");
             bool modoAutomatico = modo?.Trim().ToLower() == "s";
 
-            var so = new SoBase(memoriaCpu: 100, maxNucleos: 2, politica: politica);
+            // Cria o sistema operacional
+            var so = new SoBase(
+                totalMemoria: 100,
+                tamPagina: 10,
+                qtdNucleos: 2,
+                algoritmoEscalonamento: politicaEscolhida,
+                quantumConfig: 1);
+
+            // Cria processos
             foreach (var p in processosExemplo)
-                so.CriarProcesso(p.id, p.nome, p.tempo, p.memoria);
+            {
+                var proc = new Processo(p.id, p.nome, p.tempo, p.memoria);
+                so.CriarProcesso(proc);
+            }
 
-            so.InicializarProcessos();
+            // Cria dispositivo de exemplo
+            so.CriarDispositivo("Disco1", 5);
 
-            WriteCenteredLine(""); // espaçamento
-            WriteCenteredLine($"Executando com política: {politica}", ConsoleColor.Green);
-
-            if (modoAutomatico)
-                WriteCenteredLine("Simulação automática: um ciclo a cada 20 segundos.", ConsoleColor.Yellow);
-            else
-                WriteCenteredLine("Simulação manual: pressione Enter para avançar um ciclo.", ConsoleColor.Yellow);
-
-            WriteCenteredLine(""); // espaçamento
+            WriteCenteredLine($"Executando com política: {politicaEscolhida}", ConsoleColor.Green);
+            WriteCenteredLine(modoAutomatico
+                ? "Simulação automática: um ciclo a cada 5 segundos."
+                : "Simulação manual: pressione Enter para avançar um ciclo.", ConsoleColor.Yellow);
 
             string input;
             do
             {
-                WriteCenteredLine($"================== CICLO {so.CicloAtual + 1} ==================", ConsoleColor.Magenta);
+                WriteCenteredLine($"================== CICLO {so.CicloAtual} ==================", ConsoleColor.Magenta);
+
                 so.ExecutarCiclo();
                 MostrarStatus(so);
-                WriteCenteredLine(""); // espaçamento
+                WriteCenteredLine("");
 
                 if (modoAutomatico)
                 {
-                    Thread.Sleep(5000); // 20 segundos
-                    input = ""; // continua
+                    Thread.Sleep(5000);
+                    input = "";
                 } else
                 {
                     input = ReadCentered("[Enter] próximo ciclo   |   [r] reiniciar   |   [q] sair: ");
                     if (input == "r")
+                    {
+                        so.Finalizar();
                         break;
+                    }
                 }
 
-            } while (input != "q" && so.ProcessosPendentes());
+            } while (input != "q" && so.Processos.Any(p => p.EstadoProcesso != Estado.Finalizado));
 
-
-            if (input != "r" && input != "q")
+            if (input != "q")
             {
                 WriteCenteredLine(">>> Simulação finalizada. <<<", ConsoleColor.Red);
-                MostrarStatus(so);
-                WriteCenteredLine(""); // espaçamento
+                so.Finalizar();
             }
 
         } while (inputMenu != "q");
@@ -126,32 +118,36 @@ class Program
         WriteCenteredLine("Encerrando simulador... Até a próxima!", ConsoleColor.DarkCyan);
     }
 
+    // MostrarStatus
     static void MostrarStatus(SoBase so)
     {
-        WriteCenteredLine($"Memória disponível: {so.Cpu.MemoriaDisponivel}/{so.Cpu.TotalMemoria}", ConsoleColor.Cyan);
-        WriteCenteredLine(""); // espaçamento
+        // Memória
+        int livres = so.MemoriaSistema.NumPaginas - so.MemoriaSistema.TabelaPaginas.Count; // simplificação
+        WriteCenteredLine($"Memória disponível: {livres}/{so.MemoriaSistema.NumPaginas}", ConsoleColor.Cyan);
+        WriteCenteredLine("");
 
+        // Fila de prontos
         WriteCenteredLine("--------- Fila de prontos ---------", ConsoleColor.Yellow);
-        var fila = so.EscalonadorProcessos.FilaProntos;
+        var fila = so.EscalonadorProcessos.Fila;
         if (!fila.Any())
             WriteCenteredLine("- Vazia");
         else
             foreach (var p in fila)
                 WriteCenteredLine($"| {p.Nome,-6} | Restante: {p.TempoRestante,-3} | Executado: {p.TempoExecutado,-3} |");
 
-        WriteCenteredLine(""); // espaçamento
+        WriteCenteredLine("");
         WriteCenteredLine("------------- Núcleos --------------", ConsoleColor.Green);
         foreach (var n in so.Nucleos)
         {
             string line = n.Disponivel
                 ? $"| Núcleo {n.Id,-2} | Livre"
-                : $"| Núcleo {n.Id,-2} | {n.ThreadAtual.ProcessoAlvo.Nome,-6} | Restante: {n.ThreadAtual.ProcessoAlvo.TempoRestante,-3} | Executado: {n.ThreadAtual.ProcessoAlvo.TempoExecutado,-3} |";
+                : $"| Núcleo {n.Id,-2} | {n.ThreadAtual.ProcessoPai.Nome,-6} | Restante: {n.ThreadAtual.ProcessoPai.TempoRestante,-3} | Executado: {n.ThreadAtual.ProcessoPai.TempoExecutado,-3} |";
             WriteCenteredLine(line);
         }
 
-        WriteCenteredLine(""); // espaçamento
+        WriteCenteredLine("");
         WriteCenteredLine("--------- Processos finalizados ---------", ConsoleColor.Red);
-        var finalizados = so.Processos.FindAll(p => p.EstadoProcesso == Estado.Finalizado);
+        var finalizados = so.Processos.Where(p => p.EstadoProcesso == Estado.Finalizado).ToList();
         if (!finalizados.Any())
             WriteCenteredLine("- Nenhum");
         else
@@ -159,15 +155,13 @@ class Program
                 WriteCenteredLine($"| {p.Nome,-6} | Tempo total executado: {p.TempoExecutado,-3} |");
     }
 
+
     static void WriteCenteredLine(string text, ConsoleColor? color = null)
     {
         if (color.HasValue)
             Console.ForegroundColor = color.Value;
-        int width = Console.WindowWidth;
-        int pad = (width - text.Length) / 2;
-        if (pad < 0)
-            pad = 0;
-        Console.WriteLine(new string(' ', pad) + text);
+        int pad = (Console.WindowWidth - text.Length) / 2;
+        Console.WriteLine(new string(' ', Math.Max(pad, 0)) + text);
         Console.ResetColor();
     }
 
@@ -179,11 +173,8 @@ class Program
 
     static string ReadCentered(string prompt)
     {
-        int width = Console.WindowWidth;
-        int pad = (width - prompt.Length) / 2;
-        if (pad < 0)
-            pad = 0;
-        Console.Write(new string(' ', pad));
-        return Console.ReadLine();
+        int pad = (Console.WindowWidth - prompt.Length) / 2;
+        Console.Write(new string(' ', Math.Max(pad, 0)));
+        return Console.ReadLine() ?? "";
     }
 }

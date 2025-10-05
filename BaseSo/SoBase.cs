@@ -1,120 +1,156 @@
-﻿using SistemasOperacionais.Enum;
-using SistemasOperacionais.Model;
-using System.Diagnostics;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using SistemasOperacionais.Enum;
 
-namespace SistemasOperacionais.BaseSo
+namespace SistemasOperacionais.Model
 {
     public class SoBase
     {
-        public int MaxNucleos { get; }
-        public List<Nucleo> Nucleos { get; private set; }
-        public List<Processo> Processos { get; private set; }
-        public CPU Cpu { get; private set; }
-        public Escalonador EscalonadorProcessos { get; private set; }
-        public PoliticaEscalonamento Politica { get; set; }
-        public int CicloAtual { get; private set; } = 0;
-        public int Quantum { get; set; } = 2;
+        private int ciclo = 0;
+        private int quantum;
+        private string algoritmo;
+        private CPU cpu;
+        private List<Nucleo> nucleos;
+        private Escalonador escalonador;
+        private Memoria memoria;
+        private List<Dispositivo> dispositivos = new();
+        private SistemaArquivos fs;
+
+        // Métricas
+        private int trocasContexto = 0;
+        private int processosFinalizados = 0;
+        private List<Processo> todosProcessos = new(); 
+        public IReadOnlyList<Processo> Processos => todosProcessos.AsReadOnly();
+        public IReadOnlyList<Nucleo> Nucleos => nucleos.AsReadOnly();
+        public Memoria MemoriaSistema => memoria;
+        public Escalonador EscalonadorProcessos => escalonador;
+        public int CicloAtual => ciclo;
 
 
-        public SoBase(int memoriaCpu, int maxNucleos, PoliticaEscalonamento politica = PoliticaEscalonamento.Fifo)
+        public SoBase(
+            int totalMemoria,
+            int tamPagina,
+            int qtdNucleos,
+            string algoritmoEscalonamento,
+            int quantumConfig = 1)
         {
-            MaxNucleos = maxNucleos;
-            Politica = politica;
-
-            Nucleos = new List<Nucleo>();
-            Processos = new List<Processo>();
-            Cpu = new CPU(memoriaCpu);
-            EscalonadorProcessos = new Escalonador();
-
-            AdicionarNucleos();
+            cpu = new CPU(totalMemoria);
+            memoria = new Memoria(totalMemoria, tamPagina);
+            nucleos = Enumerable.Range(0, qtdNucleos).Select(i => new Nucleo(i)).ToList();
+            escalonador = new Escalonador();
+            algoritmo = algoritmoEscalonamento.ToLower();
+            quantum = quantumConfig;
+            fs = new SistemaArquivos();
         }
 
-        public void InicializarProcessos()
+        // Cria processo no sistema
+        public void CriarProcesso(Processo p)
         {
-            foreach (var p in Processos)
+            if (cpu.Alocar(p) && memoria.Alocar(p))
             {
-                if (!EscalonadorProcessos.FilaProntos.Contains(p) && p.EstadoProcesso == Estado.Pronto)
-                    EscalonadorProcessos.AddProcesso(p);
+                escalonador.Adicionar(p);
+                todosProcessos.Add(p);
+                Log($"Processo {p.Id} criado e adicionado à fila.");
+            } else
+            {
+                Log($"Falha ao criar processo {p.Id} (memória insuficiente).");
             }
         }
-
-        private void AdicionarNucleos()
+        public void CriarDispositivo(string nome, int tempo)
         {
-            for (int i = 0; i < MaxNucleos; i++)
-                Nucleos.Add(new Nucleo { Id = i + 1 });
+            var d = new Dispositivo(nome, tempo);
+            RegistrarDispositivo(d);
         }
 
-        public void CriarProcesso(int id, string nome, int tempoExec, int tamanhoMemoria)
+        // Adiciona dispositivo
+        public void RegistrarDispositivo(Dispositivo d)
         {
-            var processo = new Processo(id, nome, tempoExec, tamanhoMemoria);
-
-            // Apenas adiciona à lista e fila de prontos, sem alocar memória ainda
-            Processos.Add(processo);
-            EscalonadorProcessos.AddProcesso(processo);
-        }
-
-        // Avança 1 ciclo de execução do SO
-        public void ExecutarCiclo()
-        {
-            CicloAtual++;
-
-            foreach (var nucleo in Nucleos)
+            dispositivos.Add(d);
+            d.Interrupcao += p =>
             {
-                if (nucleo.Disponivel)
-                {
-                    var processo = SelecionarProcesso();
-                    if (processo != null)
-                    {
-                        if (Cpu.Alocar(processo)) // aloca memória só agora
-                        {
-                            EscalonadorProcessos.RemoverProcesso(processo);
-                            processo.primeiroCiclo = true;
-                            processo.AlterarEstado(Estado.Executando);
-                            nucleo.Executar(processo);
-                        } else
-                        {
-                            EscalonadorProcessos.AddProcesso(processo);
-                        }
-                    }
-                } else
-                {
-                    nucleo.ThreadAtual?.ExecutarCiclo();
-                    if (Politica.Equals(PoliticaEscalonamento.RoundRobin) && nucleo.ThreadAtual.ProcessoAlvo.TempoExecutado == Quantum)
-                    {
-                        nucleo.ThreadAtual.ProcessoAlvo.TempoExecutado = 0;
-                        EscalonadorProcessos.AddProcesso(nucleo.ThreadAtual.ProcessoAlvo);
-                        Cpu.Liberar(nucleo.ThreadAtual.ProcessoAlvo); // <<< faltava isso
-                        nucleo.Liberar();
-                    }
-
-                    if (nucleo.ThreadAtual?.ProcessoAlvo.EstadoProcesso == Estado.Finalizado)
-                    {
-                        Cpu.Liberar(nucleo.ThreadAtual.ProcessoAlvo); // <<< faltava isso
-                        nucleo.Liberar();
-                    }
-                }
-
-                //EscalonadorProcessos.RemoverProcesso(nucleo?.ThreadAtual?.ProcessoAlvo);
-                EscalonadorProcessos.Duplicado();
-            }
-        }
-
-        private Processo SelecionarProcesso()
-        {
-            return Politica switch
-            {
-                PoliticaEscalonamento.Fifo => EscalonadorProcessos.ProximoFifo(),
-                PoliticaEscalonamento.RoundRobin => EscalonadorProcessos.ProximoRoundRobin(),
-                PoliticaEscalonamento.SJF => EscalonadorProcessos.ProximoSJF(),
-                _ => null
+                escalonador.Adicionar(p);
+                Log($"Interrupção: processo {p.Id} voltou para pronto.");
             };
         }
 
-        // Verifica se ainda existem processos não finalizados
-        public bool ProcessosPendentes()
+        // Loop principal
+        public void ExecutarCiclo()
         {
-            return Processos.Exists(p => p.EstadoProcesso != Estado.Finalizado);
+            ciclo++;
+            Log($"=== CICLO {ciclo} ===");
+
+            // Executa dispositivos de E/S
+            foreach (var d in dispositivos)
+                d.ExecutarCiclo();
+
+            // Libera núcleos e escalona novos processos
+            foreach (var nucleo in nucleos)
+            {
+                if (nucleo.Disponivel)
+                {
+                    var proximo = SelecionarProcesso();
+                    if (proximo != null)
+                    {
+                        nucleo.Atribuir(proximo);
+                        trocasContexto++;
+                        Log($"Núcleo {nucleo.Id} atribuiu processo {proximo.Id}.");
+                    }
+                }
+            }
+
+            // Executa ciclos de cada núcleo
+            foreach (var nucleo in nucleos)
+            {
+                nucleo.ExecutarCiclo(quantum);
+                if (nucleo.ThreadAtual == null)
+                    continue;
+
+                var proc = nucleo.ThreadAtual.ProcessoPai;
+                if (proc.EstadoProcesso == Estado.Finalizado)
+                {
+                    proc.RegistrarSaida(ciclo);
+                    cpu.Liberar(proc);
+                    memoria.Liberar(proc);
+                    processosFinalizados++;
+                    Log($"Processo {proc.Id} finalizado.");
+                } else if (algoritmo == "rr") // round robin
+                {
+                    var preemptado = nucleo.Preemptar();
+                    if (preemptado != null && preemptado.EstadoProcesso != Estado.Finalizado)
+                    {
+                        preemptado.AlterarEstado(Estado.Pronto);
+                        escalonador.Adicionar(preemptado);
+                        Log($"Processo {preemptado.Id} preemptado e devolvido à fila.");
+                    }
+                }
+            }
         }
 
+        // Seleciona processo do escalonador
+        private Processo SelecionarProcesso()
+        {
+            return algoritmo switch
+            {
+                "fifo" => escalonador.ProximoFIFO(),
+                "rr" => escalonador.ProximoRoundRobin(quantum),
+                "prioridade" => escalonador.ProximoPrioridade(),
+                _ => escalonador.ProximoFIFO()
+            };
+        }
+
+        // Finaliza simulação
+        public void Finalizar()
+        {
+            Log("=== SIMULAÇÃO ENCERRADA ===");
+            Log($"Total ciclos: {ciclo}");
+            Log($"Processos finalizados: {processosFinalizados}/{todosProcessos.Count}");
+            Log($"Trocas de contexto: {trocasContexto}");
+            Log($"Taxa de falta de página: {memoria.FaltaPagina}");
+            Log($"Hits TLB: {memoria.HitsTLB} | Miss TLB: {memoria.MissTLB}");
+        }
+
+        // Log simples
+        private void Log(string msg) => Console.WriteLine($"[Ciclo {ciclo}] {msg}");
     }
 }
